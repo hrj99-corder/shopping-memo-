@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>쇼핑 메모</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+    min-height: 100vh;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 28px;
+    height: fit-content;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 24px;
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  input[type="text"]:focus { border-color: #4f8ef7; }
+  button.add-btn {
+    background: #4f8ef7;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+    line-height: 1;
+  }
+  button.add-btn:hover { background: #2f6de0; }
+  .list { list-style: none; }
+  .list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 4px;
+    border-bottom: 1px solid #f0f0f0;
+    animation: fadeIn 0.2s ease;
+  }
+  .list li:last-child { border-bottom: none; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  .check-btn {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid #d0d0d0;
+    background: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    font-size: 12px;
+    color: #fff;
+  }
+  .check-btn.checked {
+    background: #4f8ef7;
+    border-color: #4f8ef7;
+  }
+  .item-text {
+    flex: 1;
+    font-size: 15px;
+    color: #1a1a1a;
+    transition: all 0.2s;
+    word-break: break-all;
+  }
+  .item-text.done {
+    text-decoration: line-through;
+    color: #bbb;
+  }
+  .del-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+  .del-btn:hover { color: #e74c3c; }
+  .empty {
+    text-align: center;
+    color: #ccc;
+    font-size: 14px;
+    padding: 32px 0;
+  }
+  .footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #aaa;
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  .clear-btn:hover { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🛒 쇼핑 메모</h1>
+  <p class="subtitle">살 것을 입력하고 관리하세요</p>
+  <div class="input-row">
+    <input type="text" id="inp" placeholder="예: 우유, 계란, 세제..." maxlength="50">
+    <button class="add-btn" onclick="addItem()">+</button>
+  </div>
+  <ul class="list" id="list"></ul>
+  <div class="footer">
+    <span id="count">0개 항목</span>
+    <button class="clear-btn" onclick="clearDone()">완료 항목 삭제</button>
+  </div>
+</div>
+<script>
+  let items = [];
+
+  const inp = document.getElementById('inp');
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+
+  function addItem() {
+    const val = inp.value.trim();
+    if (!val) return;
+    items.push({ id: Date.now(), text: val, done: false });
+    inp.value = '';
+    render();
+    inp.focus();
+  }
+
+  function toggle(id) {
+    const it = items.find(i => i.id === id);
+    if (it) it.done = !it.done;
+    render();
+  }
+
+  function del(id) {
+    items = items.filter(i => i.id !== id);
+    render();
+  }
+
+  function clearDone() {
+    items = items.filter(i => !i.done);
+    render();
+  }
+
+  function render() {
+    const list = document.getElementById('list');
+    const count = document.getElementById('count');
+    count.textContent = items.length + '개 항목';
+    if (items.length === 0) {
+      list.innerHTML = '<li class="empty" style="display:block">아직 항목이 없습니다</li>';
+      return;
+    }
+    list.innerHTML = items.map(it => `
+      <li>
+        <button class="check-btn ${it.done ? 'checked' : ''}" onclick="toggle(${it.id})">
+          ${it.done ? '✓' : ''}
+        </button>
+        <span class="item-text ${it.done ? 'done' : ''}">${escHtml(it.text)}</span>
+        <button class="del-btn" onclick="del(${it.id})">✕</button>
+      </li>
+    `).join('');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  render();
+</script>
+</body>
+</html>
